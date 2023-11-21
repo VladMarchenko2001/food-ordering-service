@@ -9,6 +9,7 @@ import com.food.ordering.system.order.service.domain.port.output.repository.Rest
 import com.food.ordering.system.service.domain.OrderDomainService;
 import com.food.ordering.system.service.domain.entity.Order;
 import com.food.ordering.system.service.domain.entity.Restaurant;
+import com.food.ordering.system.service.domain.event.OrderCreatedEvent;
 import com.food.ordering.system.service.domain.exception.OrderDomainException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,15 +28,18 @@ class OrderCreateCommandHandler {
     private final CustomerRepository customerRepository;
     private final RestaurantRepository restaurantRepository;
     private final OrderDataMapper orderDataMapper;
+    private final ApplicationDomainEventPublisher applicationDomainEventPublisher;
 
     @Transactional
     public CreateOrderResponse createOrder(CreateOrderCommand createOrderCommand) {
         checkCustomer(createOrderCommand.getCustomerId());
         Restaurant restaurant = checkRestaurant(createOrderCommand);
         Order order = orderDataMapper.toOrder(createOrderCommand);
-        orderDomainService.initiate(order, restaurant);
+        OrderCreatedEvent createdEvent = orderDomainService.initiate(order, restaurant);
         Order saved = orderRepository.save(order);
         log.info("Order created with id: {}", saved.getId().getValue());
+        applicationDomainEventPublisher.publish(createdEvent);
+
         return orderDataMapper.toCreateOrderResponse(saved);
     }
 
