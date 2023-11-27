@@ -40,7 +40,7 @@ class OrderCreateCommandHandler {
         log.info("Order created with id: {}", saved.getId().getValue());
         applicationDomainEventPublisher.publish(createdEvent);
 
-        return orderDataMapper.toCreateOrderResponse(saved);
+        return orderDataMapper.toCreateOrderResponse(saved, "Order created successfully");
     }
 
     private void checkCustomer(UUID customerId) {
